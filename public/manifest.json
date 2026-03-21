@@ -1,0 +1,10 @@
+{
+  "name": "Andrew CRM",
+  "short_name": "CRM",
+  "description": "CEO Operating System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f5f7",
+  "theme_color": "#d08520",
+  "icons": []
+}
