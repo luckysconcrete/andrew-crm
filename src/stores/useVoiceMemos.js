@@ -72,13 +72,39 @@ const useVoiceMemos = create((set, get) => ({
       tasks_generated: false,
     };
 
-    const { error } = await supabase.from("voice_memos").insert(row);
+    const { data: inserted, error } = await supabase
+      .from("voice_memos")
+      .insert(row)
+      .select("id")
+      .single();
     if (error) {
       set({ uploading: false, error: error.message });
       return;
     }
     set({ uploading: false });
     await get().fetch();
+
+    // Auto-parse via Edge Function (fire and forget, then refresh)
+    if (inserted?.id) {
+      get().parse(inserted.id);
+    }
+  },
+
+  parse: async (memoId) => {
+    if (!supabase) return;
+    try {
+      const url = import.meta.env.VITE_SUPABASE_URL;
+      const res = await fetch(`${url}/functions/v1/parse-voice-memo`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memo_id: memoId }),
+      });
+      if (res.ok) {
+        await get().fetch();
+      }
+    } catch (err) {
+      console.warn("Parse failed:", err);
+    }
   },
 
   remove: async (id) => {
