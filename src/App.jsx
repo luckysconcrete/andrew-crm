@@ -1,15 +1,14 @@
 import { useState, useEffect } from "react";
 import { ThemeCtx, LIGHT, DARK } from "./lib/theme";
 import { MODULES } from "./lib/constants";
-import { EMAILS, VOICE_MEMOS, WEB_TASKS, AGENT_JOBS } from "./lib/mockData";
+import { VOICE_MEMOS, WEB_TASKS, AGENT_JOBS } from "./lib/mockData";
 import Sidebar from "./components/Sidebar";
 import MobileBottomNav from "./components/MobileBottomNav";
 import BriefingModule from "./modules/BriefingModule";
 import ProjectsModule from "./modules/ProjectsModule";
-import WebTeamModule from "./modules/WebTeamModule";
+import MarketingModule from "./modules/WebTeamModule";
 import SitesModule from "./modules/SitesModule";
 import YRTXModule from "./modules/YRTXModule";
-import EmailModule from "./modules/EmailModule";
 import CalendarModule from "./modules/CalendarModule";
 import VoiceModule from "./modules/VoiceModule";
 import AgentsModule from "./modules/AgentsModule";
@@ -19,10 +18,9 @@ import LuckysModule from "./modules/LuckysModule";
 const MOD_MAP = {
   briefing: BriefingModule,
   projects: ProjectsModule,
-  webteam: WebTeamModule,
+  marketing: MarketingModule,
   sites: SitesModule,
   yrtx: YRTXModule,
-  email: EmailModule,
   calendar: CalendarModule,
   voice: VoiceModule,
   luckys: LuckysModule,
@@ -57,9 +55,8 @@ export default function App() {
   };
 
   const urgentBadges = {
-    email: EMAILS.filter((e) => e.unread).length,
     voice: VOICE_MEMOS.flatMap((m) => m.parsed).filter((t) => t.status === "pending").length,
-    webteam: WEB_TASKS.filter((t) => t.assignee === "Unassigned").length,
+    marketing: WEB_TASKS.filter((t) => t.assignee === "Unassigned").length,
     agents: AGENT_JOBS.filter((j) =>
       ["building", "reviewing", "testing", "deploying"].includes(j.status)
     ).length,

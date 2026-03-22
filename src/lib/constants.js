@@ -1,14 +1,13 @@
 export const MODULES = [
   { id: "briefing", label: "Briefing", icon: "\u2600\uFE0F", group: "daily" },
   { id: "projects", label: "Projects", icon: "\uD83D\uDCCB", group: "work" },
-  { id: "webteam", label: "Web Team", icon: "\uD83C\uDFA8", group: "work" },
+  { id: "marketing", label: "Marketing", icon: "\uD83C\uDFA8", group: "work" },
   { id: "sites", label: "Sites", icon: "\uD83C\uDF10", group: "work" },
   { id: "yrtx", label: "YRTX", icon: "\uD83C\uDFDB\uFE0F", group: "campaigns" },
-  { id: "email", label: "Email", icon: "\u2709\uFE0F", group: "comms" },
   { id: "calendar", label: "Calendar", icon: "\uD83D\uDCC5", group: "comms" },
   { id: "voice", label: "Voice", icon: "\uD83C\uDF99\uFE0F", group: "comms" },
   { id: "agents", label: "Agents", icon: "\uD83E\uDD16", group: "system" },
-  { id: "luckys", label: "Lucky's", icon: "\uD83C\uDF40", group: "companies" },
+  { id: "luckys", label: "Lucky's", icon: "\uD83C\uDF40", group: "campaigns" },
 ];
 
 export const GROUPS = {
@@ -17,10 +16,9 @@ export const GROUPS = {
   campaigns: "Campaigns",
   comms: "Communications",
   system: "System",
-  companies: "Companies",
 };
 
-export const MOBILE_NAV_TABS = ["briefing", "projects", "agents", "email", "calendar"];
+export const MOBILE_NAV_TABS = ["briefing", "projects", "agents", "voice", "calendar"];
 
 /** Map company key to display label */
 export const companyLabel = (co) =>
