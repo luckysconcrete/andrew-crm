@@ -1,9 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "../lib/theme";
 import { companyColor, companyLabel, typeConfig, statusConfig, formatTime } from "../lib/constants";
-import { AGENT_JOBS } from "../lib/mockData";
+import useAgentJobs from "../stores/useAgentJobs";
 import Pill from "../components/ui/Pill";
-import Dot from "../components/ui/Dot";
 import Bar from "../components/ui/Bar";
 import Tabs from "../components/ui/Tabs";
 import Row from "../components/ui/Row";
@@ -17,27 +16,85 @@ const VIEW_TABS = [
   { id: "all", label: "All" },
 ];
 
+const JOB_TYPES = [
+  { id: "code", label: "Code" },
+  { id: "design", label: "Design" },
+  { id: "content", label: "Content" },
+  { id: "seo", label: "SEO" },
+  { id: "batch", label: "Batch" },
+  { id: "report", label: "Report" },
+];
+
+const inputStyle = (C) => ({
+  padding: "8px 12px",
+  borderRadius: "var(--radius-sm)",
+  border: `1px solid ${C.border}`,
+  background: C.inputBg,
+  color: C.text,
+  fontSize: 13,
+  fontFamily: "var(--font-body)",
+  width: "100%",
+  outline: "none",
+});
+
+const selectStyle = (C) => ({
+  ...inputStyle(C),
+  cursor: "pointer",
+});
+
+const btnStyle = (C, color) => ({
+  fontSize: 11,
+  fontWeight: 700,
+  padding: "5px 14px",
+  borderRadius: "var(--radius-sm)",
+  border: `1px solid ${color}40`,
+  background: `${color}12`,
+  color,
+  cursor: "pointer",
+  fontFamily: "var(--font-body)",
+});
+
 export default function AgentsModule({ onSettings }) {
   const C = useTheme();
+  const { jobs, fetch: fetchJobs, subscribe, create, cancel } = useAgentJobs();
   const [view, setView] = useState("all");
   const [expanded, setExpanded] = useState(null);
-  const [newJob, setNewJob] = useState("");
+  const [selectedType, setSelectedType] = useState(null);
+  const [formData, setFormData] = useState({ title: "", target: "", company: "zas" });
+
+  useEffect(() => {
+    fetchJobs();
+    const unsub = subscribe();
+    return unsub;
+  }, []);
 
   const tc = typeConfig(C);
   const sc = statusConfig(C);
 
   const activeStatuses = ["building", "reviewing", "testing", "deploying"];
 
-  const filtered = AGENT_JOBS.filter((j) => {
+  const filtered = jobs.filter((j) => {
     if (view === "active") return activeStatuses.includes(j.status);
     if (view === "queued") return j.status === "queued";
     if (view === "complete") return j.status === "complete";
     return true;
   });
 
-  const activeCount = AGENT_JOBS.filter((j) => activeStatuses.includes(j.status)).length;
-  const queuedCount = AGENT_JOBS.filter((j) => j.status === "queued").length;
-  const doneCount = AGENT_JOBS.filter((j) => j.status === "complete").length;
+  const activeCount = jobs.filter((j) => activeStatuses.includes(j.status)).length;
+  const queuedCount = jobs.filter((j) => j.status === "queued").length;
+  const doneCount = jobs.filter((j) => j.status === "complete").length;
+
+  const handleSubmit = async () => {
+    if (!formData.title.trim() || !selectedType) return;
+    await create({ ...formData, type: selectedType });
+    setFormData({ title: "", target: "", company: "zas" });
+    setSelectedType(null);
+  };
+
+  const handleCancel = async (id) => {
+    if (!window.confirm("Cancel this job?")) return;
+    await cancel(id);
+  };
 
   return (
     <div>
@@ -119,6 +176,14 @@ export default function AgentsModule({ onSettings }) {
                       </div>
                     )}
                   </div>
+                  {job.status === "queued" && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleCancel(job.id); }}
+                      style={btnStyle(C, C.red)}
+                    >
+                      Cancel
+                    </button>
+                  )}
                 </Row>
 
                 {/* Expanded Log */}
@@ -171,40 +236,74 @@ export default function AgentsModule({ onSettings }) {
         <div style={{ fontSize: 11, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
           Submit New Job
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <input
-            type="text"
-            placeholder="Describe the task for an agent..."
-            value={newJob}
-            onChange={(e) => setNewJob(e.target.value)}
-            style={{
-              flex: 1,
-              padding: "9px 12px",
-              borderRadius: "var(--radius-sm)",
-              border: `1px solid ${C.border}`,
-              background: C.inputBg,
-              color: C.text,
-              fontSize: 13,
-              fontFamily: "var(--font-body)",
-              outline: "none",
-            }}
-          />
-          <button
-            style={{
-              padding: "9px 20px",
-              borderRadius: "var(--radius-sm)",
-              border: "none",
-              background: C.amber,
-              color: "#fff",
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: "pointer",
-              fontFamily: "var(--font-body)",
-            }}
-          >
-            Queue
-          </button>
+        {/* Type selector buttons */}
+        <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
+          {JOB_TYPES.map((jt) => {
+            const tp = tc[jt.id] || tc.code;
+            const isActive = selectedType === jt.id;
+            return (
+              <button
+                key={jt.id}
+                onClick={() => setSelectedType(isActive ? null : jt.id)}
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: "5px 12px",
+                  borderRadius: "var(--radius-sm)",
+                  border: `1px solid ${isActive ? tp.c : C.border}`,
+                  background: isActive ? `${tp.c}18` : C.card,
+                  color: isActive ? tp.c : C.text3,
+                  cursor: "pointer",
+                  fontFamily: "var(--font-body)",
+                }}
+              >
+                {tp.i} {jt.label}
+              </button>
+            );
+          })}
         </div>
+
+        {/* Inline form — visible when a type is selected */}
+        {selectedType && (
+          <div style={{
+            padding: 14,
+            background: C.card,
+            border: `1px solid ${C.border}`,
+            borderRadius: "var(--radius-md)",
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+          }}>
+            <input
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              placeholder="Job title"
+              style={inputStyle(C)}
+            />
+            <div style={{ display: "flex", gap: 8 }}>
+              <input
+                value={formData.target}
+                onChange={(e) => setFormData({ ...formData, target: e.target.value })}
+                placeholder="Target (e.g. site or repo)"
+                style={inputStyle(C)}
+              />
+              <select
+                value={formData.company}
+                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                style={selectStyle(C)}
+              >
+                <option value="luckys">Lucky's</option>
+                <option value="zas">ZAS</option>
+                <option value="yrtx">YRTX</option>
+                <option value="personal">Personal</option>
+              </select>
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button onClick={() => setSelectedType(null)} style={btnStyle(C, C.text3)}>Cancel</button>
+              <button onClick={handleSubmit} style={btnStyle(C, C.amber)}>Queue Job</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

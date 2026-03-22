@@ -1,23 +1,25 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { useTheme } from "../lib/theme";
-
-const DEFAULT_SETTINGS = [
-  { key: "auto_deploy", label: "Auto-deploy on all passes complete", description: "Automatically deploy when all agent passes finish successfully", enabled: true },
-  { key: "pr_review", label: "Require PR review before deploy", description: "Create a pull request and wait for review instead of auto-merging", enabled: true },
-  { key: "slack_notify", label: "Slack notifications", description: "Send notifications to Slack when jobs start, complete, or fail", enabled: true },
-  { key: "parallel_jobs", label: "Allow parallel jobs", description: "Run multiple agent jobs simultaneously instead of sequentially", enabled: false },
-  { key: "auto_retry", label: "Auto-retry failed jobs", description: "Automatically retry jobs that fail up to 2 times", enabled: false },
-  { key: "cost_limit", label: "Cost limit alerts", description: "Alert when agent API costs exceed daily threshold", enabled: true },
-];
+import useSettings from "../stores/useSettings";
 
 export default function AgentSettings({ onBack }) {
   const C = useTheme();
-  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const { settings, fetch: fetchSettings, update, save } = useSettings();
 
-  const toggleSetting = (key) => {
-    setSettings((prev) =>
-      prev.map((s) => (s.key === key ? { ...s, enabled: !s.enabled } : s))
-    );
+  useEffect(() => { fetchSettings(); }, []);
+
+  const SETTING_DEFS = [
+    { key: "code_auto_deploy", label: "Auto-deploy on all passes complete", description: "Automatically deploy when all agent passes finish successfully" },
+    { key: "code_review", label: "Require PR review before deploy", description: "Create a pull request and wait for review instead of auto-merging" },
+    { key: "code_tests", label: "Run tests before deploy", description: "Run automated test suite before allowing deployment" },
+    { key: "code_rollback", label: "Auto-rollback on failure", description: "Automatically rollback if deployment health checks fail" },
+    { key: "notif_complete", label: "Notify on job complete", description: "Send notification when an agent job finishes successfully" },
+    { key: "notif_failure", label: "Notify on job failure", description: "Send notification when an agent job fails" },
+    { key: "budget_enabled", label: "Cost limit alerts", description: "Alert when agent API costs exceed daily threshold" },
+  ];
+
+  const handleSave = async () => {
+    await save();
   };
 
   return (
@@ -47,61 +49,65 @@ export default function AgentSettings({ onBack }) {
 
       {/* Toggle Rows */}
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {settings.map((s) => (
-          <div
-            key={s.key}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 14,
-              padding: "12px 14px",
-              background: C.card,
-              border: `1px solid ${C.border}`,
-              borderRadius: "var(--radius-md)",
-              boxShadow: C.shadow,
-            }}
-          >
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{s.label}</div>
-              <div style={{ fontSize: 11, color: C.text3, marginTop: 2 }}>{s.description}</div>
-            </div>
-
-            {/* Toggle Switch */}
-            <button
-              onClick={() => toggleSetting(s.key)}
+        {SETTING_DEFS.map((s) => {
+          const enabled = !!settings[s.key];
+          return (
+            <div
+              key={s.key}
               style={{
-                width: 40,
-                height: 22,
-                borderRadius: 11,
-                border: "none",
-                background: s.enabled ? C.green : C.border,
-                cursor: "pointer",
-                position: "relative",
-                flexShrink: 0,
-                transition: "background 0.15s",
+                display: "flex",
+                alignItems: "center",
+                gap: 14,
+                padding: "12px 14px",
+                background: C.card,
+                border: `1px solid ${C.border}`,
+                borderRadius: "var(--radius-md)",
+                boxShadow: C.shadow,
               }}
             >
-              <div
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{s.label}</div>
+                <div style={{ fontSize: 11, color: C.text3, marginTop: 2 }}>{s.description}</div>
+              </div>
+
+              {/* Toggle Switch */}
+              <button
+                onClick={() => update(s.key, !enabled)}
                 style={{
-                  width: 16,
-                  height: 16,
-                  borderRadius: "50%",
-                  background: "#fff",
-                  position: "absolute",
-                  top: 3,
-                  left: s.enabled ? 21 : 3,
-                  transition: "left 0.15s",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                  width: 40,
+                  height: 22,
+                  borderRadius: 11,
+                  border: "none",
+                  background: enabled ? C.green : C.border,
+                  cursor: "pointer",
+                  position: "relative",
+                  flexShrink: 0,
+                  transition: "background 0.15s",
                 }}
-              />
-            </button>
-          </div>
-        ))}
+              >
+                <div
+                  style={{
+                    width: 16,
+                    height: 16,
+                    borderRadius: "50%",
+                    background: "#fff",
+                    position: "absolute",
+                    top: 3,
+                    left: enabled ? 21 : 3,
+                    transition: "left 0.15s",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                  }}
+                />
+              </button>
+            </div>
+          );
+        })}
       </div>
 
       {/* Save Button */}
       <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>
         <button
+          onClick={handleSave}
           style={{
             padding: "10px 28px",
             borderRadius: "var(--radius-sm)",

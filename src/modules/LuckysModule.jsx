@@ -1,5 +1,6 @@
+import { useEffect } from "react";
 import { useTheme } from "../lib/theme";
-import { PROJECTS } from "../lib/mockData";
+import useProjects from "../stores/useProjects";
 import Pill from "../components/ui/Pill";
 import Bar from "../components/ui/Bar";
 import Row from "../components/ui/Row";
@@ -7,7 +8,11 @@ import Section from "../components/ui/Section";
 
 export default function LuckysModule() {
   const C = useTheme();
-  const luckysProjects = PROJECTS.filter((p) => p.company === "luckys");
+  const { projects, fetch: fetchProjects } = useProjects();
+
+  useEffect(() => { fetchProjects(); }, []);
+
+  const luckysProjects = projects.filter((p) => p.company === "luckys");
 
   return (
     <div>

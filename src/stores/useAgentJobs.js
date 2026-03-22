@@ -45,6 +45,36 @@ const useAgentJobs = create((set, get) => ({
       .subscribe();
     return () => supabase.removeChannel(channel);
   },
+
+  create: async (job) => {
+    if (!supabase) return;
+    const row = {
+      title: job.title,
+      type: job.type || "code",
+      target: job.target || "",
+      company: job.company || "zas",
+      status: "queued",
+    };
+    const { error } = await supabase.from("agent_jobs").insert(row);
+    if (error) {
+      set({ error: error.message });
+      return;
+    }
+    await get().fetch();
+  },
+
+  cancel: async (id) => {
+    if (!supabase) return;
+    const { error } = await supabase
+      .from("agent_jobs")
+      .update({ status: "failed" })
+      .eq("id", id);
+    if (error) {
+      set({ error: error.message });
+      return;
+    }
+    await get().fetch();
+  },
 }));
 
 export default useAgentJobs;

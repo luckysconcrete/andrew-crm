@@ -1,6 +1,9 @@
+import { useEffect } from "react";
 import { useTheme } from "../lib/theme";
 import { companyColor, companyLabel, statusConfig, formatTime } from "../lib/constants";
-import { PROJECTS, EVENTS, AGENT_JOBS, EMAILS } from "../lib/mockData";
+import { EVENTS, EMAILS } from "../lib/mockData";
+import useProjects from "../stores/useProjects";
+import useAgentJobs from "../stores/useAgentJobs";
 import StatCard from "../components/ui/StatCard";
 import Pill from "../components/ui/Pill";
 import Dot from "../components/ui/Dot";
@@ -10,12 +13,19 @@ import Section from "../components/ui/Section";
 export default function BriefingModule() {
   const C = useTheme();
   const sc = statusConfig(C);
+  const { projects, fetch: fetchProjects } = useProjects();
+  const { jobs, fetch: fetchJobs } = useAgentJobs();
 
-  const activeProjects = PROJECTS.filter((p) => p.status === "active").length;
-  const stalledProjects = PROJECTS.filter((p) => p.status === "stalled").length;
+  useEffect(() => {
+    fetchProjects();
+    fetchJobs();
+  }, []);
+
+  const activeProjects = projects.filter((p) => p.status === "active").length;
+  const stalledProjects = projects.filter((p) => p.status === "stalled").length;
   const unreadEmails = EMAILS.filter((e) => e.unread).length;
-  const activeAgents = AGENT_JOBS.filter((j) => j.status === "building" || j.status === "reviewing").length;
-  const stalled = PROJECTS.filter((p) => p.status === "stalled");
+  const activeAgentJobs = jobs.filter((j) => j.status === "building" || j.status === "reviewing");
+  const stalled = projects.filter((p) => p.status === "stalled");
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
@@ -35,7 +45,7 @@ export default function BriefingModule() {
         <StatCard label="Active Projects" value={activeProjects} color={C.green} />
         <StatCard label="Stalled" value={stalledProjects} color={C.red} />
         <StatCard label="Unread Emails" value={unreadEmails} color={C.amber} />
-        <StatCard label="Agents Working" value={activeAgents} color={C.blue} />
+        <StatCard label="Agents Working" value={activeAgentJobs.length} color={C.blue} />
       </div>
 
       {/* Today's Schedule */}
@@ -67,9 +77,9 @@ export default function BriefingModule() {
       </Section>
 
       {/* Agents Working */}
-      <Section title="Agents Working" count={activeAgents}>
+      <Section title="Agents Working" count={activeAgentJobs.length}>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          {AGENT_JOBS.filter((j) => j.status === "building" || j.status === "reviewing").map((job) => (
+          {activeAgentJobs.map((job) => (
             <Row key={job.id} hover>
               <Dot color={sc[job.status].c} />
               <div style={{ flex: 1, minWidth: 0 }}>
